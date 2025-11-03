@@ -9,11 +9,17 @@
 
     <!-- iOS meta tags & icons -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="놀몬버스" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#6366F1" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -39,6 +45,9 @@
         min-height: 100%;
         min-height: -webkit-fill-available;
         overflow-x: hidden;
+        /* 주소창 숨기기를 위한 높이 조정 */
+        min-height: 101vh;
+        min-height: calc(100vh + 1px);
       }
       /* 스크롤 시 주소창 숨기기 */
       @media screen and (display-mode: browser) {
@@ -49,15 +58,129 @@
       }
     </style>
     <script>
-      // 주소창 높이 보정 (모바일)
-      (function() {
+      // 주소창 높이 보정 및 자동 숨김 (모바일)
+      (function () {
         function setViewportHeight() {
           let vh = window.innerHeight * 0.01;
-          document.documentElement.style.setProperty('--vh', vh + 'px');
+          document.documentElement.style.setProperty("--vh", vh + "px");
         }
         setViewportHeight();
-        window.addEventListener('resize', setViewportHeight);
-        window.addEventListener('orientationchange', setViewportHeight);
+        window.addEventListener("resize", setViewportHeight);
+        window.addEventListener("orientationchange", setViewportHeight);
+
+        // 모바일 브라우저에서 주소창 자동 숨김 (적극적인 방법)
+        let hideAttempts = 0;
+        const maxAttempts = 5;
+
+        function hideAddressBar() {
+          // 홈 화면 추가 모드가 아닌 경우에만 실행
+          const isStandalone =
+            window.matchMedia("(display-mode: standalone)").matches ||
+            window.matchMedia("(display-mode: fullscreen)").matches;
+          
+          if (!isStandalone && hideAttempts < maxAttempts) {
+            const windowHeight = window.innerHeight;
+            const documentHeight = document.documentElement.scrollHeight;
+            
+            // 여러 방법으로 시도
+            if (window.scrollY === 0 && documentHeight > windowHeight) {
+              // 미세 스크롤로 주소창 숨기기 (사용자가 알아차리기 어려움)
+              window.scrollTo({
+                top: 1,
+                behavior: 'instant'
+              });
+              
+              // 잠시 후 다시 맨 위로 (사용자 경험 유지)
+              setTimeout(function() {
+                if (window.scrollY === 1) {
+                  window.scrollTo({
+                    top: 0,
+                    behavior: 'instant'
+                  });
+                }
+              }, 50);
+              
+              hideAttempts++;
+            }
+            
+            // 화면 높이 변경 감지 (주소창이 숨겨지면 innerHeight가 증가)
+            if (window.innerHeight !== windowHeight) {
+              // 주소창이 숨겨진 것으로 보임
+              return;
+            }
+          }
+        }
+
+        // 즉시 시도
+        hideAddressBar();
+
+        // DOMContentLoaded 시도
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(hideAddressBar, 50);
+            setTimeout(hideAddressBar, 200);
+            setTimeout(hideAddressBar, 500);
+          });
+        }
+
+        // 페이지 로드 완료 시 여러 번 시도
+        window.addEventListener("load", function () {
+          setTimeout(hideAddressBar, 50);
+          setTimeout(hideAddressBar, 100);
+          setTimeout(hideAddressBar, 300);
+          setTimeout(hideAddressBar, 600);
+        });
+
+        // 리사이즈 이벤트로 주소창 상태 확인 및 재시도
+        let resizeTimer;
+        window.addEventListener("resize", function () {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(function () {
+            if (hideAttempts < maxAttempts) {
+              hideAddressBar();
+            }
+          }, 100);
+        });
+
+        // 터치 이벤트로 스크롤 트리거 (사용자가 터치하면 주소창 숨김)
+        let touchStartY = 0;
+        document.addEventListener(
+          "touchstart",
+          function (e) {
+            touchStartY = e.touches[0].clientY;
+          },
+          { passive: true }
+        );
+
+        document.addEventListener(
+          "touchmove",
+          function (e) {
+            const touchY = e.touches[0].clientY;
+            const diff = touchStartY - touchY;
+            
+            // 위로 스와이프 감지 (약간의 스크롤로 주소창 숨기기)
+            if (diff > 10 && window.scrollY === 0) {
+              window.scrollTo(0, 1);
+            }
+          },
+          { passive: true }
+        );
+
+        // 스크롤 이벤트로 주소창 자동 숨김 감지 (Android Chrome 등)
+        let lastScrollTop = 0;
+        let ticking = false;
+        window.addEventListener("scroll", function () {
+          if (!ticking) {
+            window.requestAnimationFrame(function () {
+              const scrollTop =
+                window.pageYOffset || document.documentElement.scrollTop;
+              // 스크롤이 있으면 주소창이 자동으로 숨겨짐 (브라우저 기본 기능)
+              lastScrollTop = scrollTop;
+              ticking = false;
+            });
+            ticking = true;
+          }
+        });
       })();
 
       window.addEventListener("load", function (ev) {
