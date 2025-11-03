@@ -2,5 +2,21 @@
   "version": 2,
   "outputDirectory": "build/web",
   "framework": null,
-  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    }
+  ]
 }
