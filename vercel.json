@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "buildCommand": "flutter build web",
+  "outputDirectory": "build/web",
+  "devCommand": "flutter run -d chrome --web-port=8080",
+  "installCommand": "flutter pub get"
+}
